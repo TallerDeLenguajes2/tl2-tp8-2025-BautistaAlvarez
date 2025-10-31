@@ -1,0 +1,12 @@
+@model List<Productos>
+
+    @foreach (Productos producto in Model){
+        <tr>
+            <td>@producto.IdProducto</td>
+            <td>@producto.Descripcion</td>
+            <td>@producto.Precio</td>
+            <td>
+                <a ></a>
+            </td>
+        </tr>
+    }
