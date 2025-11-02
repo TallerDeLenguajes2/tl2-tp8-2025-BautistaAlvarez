@@ -1,0 +1,11 @@
+@model Productos
+<h2>¿Seguro que quieres eliminar el siguiente producto?</h2>
+<div>
+<p>Descripcion: @Model.Descripcion</p>
+<p>Precio : @Model.Precio</p>
+</div>
+<form asp-controller="Productos" asp-action="Delete" method="post">
+    <input type="hidden" asp-for="IdProducto"><!--Podria poner model.IdProcuto pero asi como esta el programa lo deteca y es mejor -->
+    <button type="submit" class="btn btn-danger">Eliminar</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a><!--Aqui le digo que me retorne al index-->
+</form>

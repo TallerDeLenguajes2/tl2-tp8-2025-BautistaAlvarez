@@ -12,13 +12,13 @@ public class PresupuestosRepository
         using var conexion = new SqliteConnection(cadenaConexion);//usar using
         conexion.Open();//abro la conexion usando using para que se abra y cierre cuando sea deje de usarse
 
-        string sql = "INSERT INTO Presupuestos (idPresupuesto, NombreDestinatario, FechaCreacion) VALUES (@idPresupuesto, @NombreDestinatario, @FechaCreacion)";//codigo sql
+        string sql = "INSERT INTO Presupuestos (NombreDestinatario, FechaCreacion) VALUES (@NombreDestinatario, @FechaCreacion)";//codigo sql
 
         using var comando = new SqliteCommand(sql, conexion);
 
-        comando.Parameters.Add(new SqliteParameter("@idPresupuesto", presupuesto.IdPresupuesto));//cambio los valores por los valores que le doy por la funcion
-        comando.Parameters.Add(new SqliteParameter("@NombreDestinatario", presupuesto.NombreDestinatario));
-        comando.Parameters.Add(new SqliteParameter("@FechaCreacion", presupuesto.FechaCreacion.ToDateTime(TimeOnly.MinValue)));//lo paso a string con tipo fecha
+        //comando.Parameters.Add(new SqliteParameter("@idPresupuesto", presupuesto.IdPresupuesto));//quito esto porque ya solo lo asigne la base de dato
+        comando.Parameters.Add(new SqliteParameter("@NombreDestinatario", presupuesto.NombreDestinatario));//cambio los valores por los valores que le doy por la funcion
+        comando.Parameters.Add(new SqliteParameter("@FechaCreacion", presupuesto.FechaCreacion.ToString("yyyy-MM-dd")));//llega un date only y lo paso a string con tipo fecha
 
         //presupuesto.FechaCreacion.ToDateTime(TimeOnly.MinValue))) //otra opcion
         //como uso DateOnly debo pasar de dateOnly a DateTime con el comando.ToDateTime() y dentro del parentesis van los minutos que inicio por eso timeonly.minvalue
@@ -180,6 +180,38 @@ public class PresupuestosRepository
 
         comando.Parameters.Add(new SqliteParameter("@idPresupuesto", idPresupuesto));
         comando.ExecuteNonQuery();
+    }
+    public void ModificarPresupuesto(int idPresupuesto, Presupuestos presupuesto)
+    {
+        using var conexion = new SqliteConnection(cadenaConexion);
+        conexion.Open();
+
+        string sqlPresupuesto = "UPDATE Presupuestos SET NombreDestinatario = @NombreDestinatario WHERE idPresupuesto = @idPresupuesto";
+        using var comandoPresupuesto = new SqliteCommand(sqlPresupuesto, conexion);
+
+        comandoPresupuesto.Parameters.Add(new SqliteParameter("@NombreDestinatario", presupuesto.NombreDestinatario));
+        comandoPresupuesto.Parameters.Add(new SqliteParameter("@idPresupuesto", idPresupuesto));
+        comandoPresupuesto.ExecuteNonQuery();
+        //borrar detalle
+        string sqlBorrarDetalle = "DELETE FROM PresupuestosDetalle WHERE idPresupuesto = @idPresupuesto";
+
+        using var comandoBorrar = new SqliteCommand(sqlBorrarDetalle, conexion);
+        comandoBorrar.Parameters.Add(new SqliteParameter("@idPresupuesto", idPresupuesto));
+        comandoBorrar.ExecuteNonQuery();
+        //Insertar nuevo detalle
+        string sqlDetalle = "INSERT INTO PresupuestosDetalle (idPresupuesto, idProducto, Cantidad) VALUES (@idPresupuesto, @idProducto, @Cantidad)";
+
+ 
+        foreach (var detalle in presupuesto.Detalle)
+        {
+            using var comandoDetalle = new SqliteCommand(sqlDetalle, conexion);
+            comandoDetalle.Parameters.Add(new SqliteParameter("@idPresupuesto", idPresupuesto));//va dentro ya que el comando se debe actualizar
+            comandoDetalle.Parameters.Add(new SqliteParameter("@idProducto", detalle.Producto.IdProducto));
+            comandoDetalle.Parameters.Add(new SqliteParameter("@Cantidad", detalle.Cantidad));
+            comandoDetalle.ExecuteNonQuery();
+        }
+        
+
     }
 
     public bool ExistePresupuesto(int idPresupuesto)

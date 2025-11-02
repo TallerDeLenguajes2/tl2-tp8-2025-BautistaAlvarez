@@ -1,0 +1,16 @@
+
+@model Productos
+
+<form asp-controller="Productos" asp-action="Edit" method="post">
+    <input hidden asp-for="@Model.IdProducto//aqui va porque uso la clase completa con su id">
+    <div class="form-group">
+        <label asp-for="@Model.Descripcion"></label>
+        <input asp-for="@Model.Descripcion" class="form-control" />
+    </div><!--Se puede observar que aqui mando los 3 datos que usa mi repositorio para hacer el cambio-->
+
+    <div class="form-group">
+        <label asp-for="@Model.Precio"></label>
+        <input asp-for="@Model.Precio" class="form-control" />
+    </div>
+    <button type="submit">Enviar</button>
+</form>

@@ -18,7 +18,7 @@ namespace tl2_tp8_2025_BautistaAlvarez.Models
 
         public Presupuestos()//constructor
         {
-
+            Detalle = new List<PresupuestosDetalle>();//importante inicializar la lista, evita errores al intentar recorrer listas null
         }
 
         public const float IVA = 0.21f;

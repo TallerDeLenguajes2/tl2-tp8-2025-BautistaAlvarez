@@ -10,12 +10,12 @@ public class ProductoRepository
         using var conexion = new SqliteConnection(cadenaConexion);
         conexion.Open();//establezco y abro la conexion
 
-        string sql = "INSERT INTO Productos (idProducto, Descripcion, Precio) VALUES (@idProducto, @Descripcion, @Precio)";//codigo sql
+        string sql = "INSERT INTO Productos (Descripcion, Precio) VALUES (@Descripcion, @Precio)";//codigo sql
 
         using var comando = new SqliteCommand(sql, conexion);//creo comandos
 
-        comando.Parameters.Add(new SqliteParameter("@idProducto", producto.IdProducto));//cambio los parametrso con comando
-        comando.Parameters.Add(new SqliteParameter("@Descripcion", producto.Descripcion));
+        //comando.Parameters.Add(new SqliteParameter("@idProducto", producto.IdProducto));
+        comando.Parameters.Add(new SqliteParameter("@Descripcion", producto.Descripcion));//cambio los parametrso con comando
         comando.Parameters.Add(new SqliteParameter("@Precio", producto.Precio));
 
         comando.ExecuteNonQuery();//como no devuelve nada ejecuto de esta manera non

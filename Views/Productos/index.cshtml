@@ -1,12 +1,32 @@
 @model List<Productos>
+@{
+    ViewData["Title"] = "Home Page";
+}
 
-    @foreach (Productos producto in Model){
+<h2>Product List</h2>
+
+<table class="table table-dark">
+    <thead>
         <tr>
-            <td>@producto.IdProducto</td>
-            <td>@producto.Descripcion</td>
-            <td>@producto.Precio</td>
-            <td>
-                <a ></a>
-            </td>
+            <th hidden>ID</th>
+            <th>Descripcion</th>
+            <th>Precio</th>
+            <th></th>
         </tr>
-    }
+    </thead>
+    <tbody>
+        @foreach (Productos producto in Model)
+        {
+            <tr>
+                <td hidden>@producto.IdProducto</td>
+                <td>@producto.Descripcion</td>
+                <td>@producto.Precio</td>
+                <td>
+                    <a asp-controller="Productos" asp-action="Details" asp-route-idProducto="@producto.IdProducto">Detalle</a>
+                    <a asp-controller="Productos" asp-action="Edit" asp-route-idProducto="@producto.IdProducto">Editar</a><!--Ojo con el asp-route"xxx"= el xxx debe coincidir con el nombre del parametro que espera en el controller al mandar, recorda que route es una ruta-->
+                    <a asp-controller="Productos" asp-action="Delete" asp-route-idProducto="@producto.IdProducto" onclick="return confirm('¿Estas seguro que quieres eliminar el elemento?')">Eliminar</a>                      
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

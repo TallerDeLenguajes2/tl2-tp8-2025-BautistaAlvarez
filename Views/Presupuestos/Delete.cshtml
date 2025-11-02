@@ -1,0 +1,11 @@
+@model Presupuestos
+<h2>¿Seguro que quieres eliminar el siguiente presupuesto?</h2>
+<div>
+<p>Nombre destinatario: @Model.NombreDestinatario</p>
+<p>Fecha Creacion: @Model.FechaCreacion</p>
+</div>
+<form asp-controller="Presupuestos" asp-action="Delete" method="post">
+    <input type="hidden" asp-for="IdPresupuesto"><!--Podria poner model.IdPresupuesto pero asi como esta el programa lo deteca y es mejor -->
+    <button type="submit" class="btn btn-danger">Eliminar</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a><!--Aqui le digo que me retorne al index-->
+</form>

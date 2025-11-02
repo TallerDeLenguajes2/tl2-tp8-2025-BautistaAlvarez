@@ -1,0 +1,32 @@
+@model List<Presupuestos>
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<h2>Lista Presupuestos</h2>
+
+<table class="table table-dark">
+    <thead>
+        <tr>
+            <th hidden>ID</th>
+            <th>Nombre destinatario</th>
+            <th>Fecha de creacion</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var presupuesto in Model)
+        {
+            <tr>
+                <td hidden>@presupuesto.IdPresupuesto</td>
+                <td>@presupuesto.NombreDestinatario</td>
+                <td>@presupuesto.FechaCreacion</td>
+                <td>
+                    <a asp-controller="Presupuestos" asp-action="Details" asp-route-idPresupuesto="@presupuesto.IdPresupuesto">Detalle</a><!--Ojo con el asp-route-"xxx",ahi lo que hace es mandar el dato idpresupuesto al detail, deben coincidir los parametros -->
+                    <a asp-controller="Presupuestos" asp-action="Edit" asp-route-idPresupuesto="@presupuesto.IdPresupuesto">Editar</a>
+                    <a asp-controller="Presupuestos" asp-action="Delete" asp-route-idPresupuesto="@presupuesto.IdPresupuesto" onclick="return confirm('¿Estas seguro que quieres eliminar el elemento?')">Eliminar</a>                      
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
