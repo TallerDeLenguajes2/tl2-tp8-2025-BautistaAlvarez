@@ -1,4 +1,5 @@
-@model List<Productos>
+@using tl2_tp8_2025_BautistaAlvarez.ViewModels
+@model List<ProductoViewModel>
 @{
     ViewData["Title"] = "Home Page";
 }
@@ -15,7 +16,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (Productos producto in Model)
+        @foreach (var producto in Model)
         {
             <tr>
                 <td hidden>@producto.IdProducto</td>

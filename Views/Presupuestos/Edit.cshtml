@@ -1,21 +1,28 @@
-@model Presupuestos
+@model tl2_tp8_2025_BautistaAlvarez.ViewModels.EditarPresupuestoViewModel
 
 <form asp-controller="Presupuestos" asp-action="Edit" method="post"><!--Bindear al controller presupuesto, a la accion de su controller y metodo-->
     <input hidden asp-for="IdPresupuesto"><!--aqui va porque uso su id para cambiar los valores, en el repositorio hago uso del id, idproducto,cantidad y nombre destinatario-->
     <div class="form-group">
         <label asp-for="NombreDestinatario"></label><!--Recodar que es equivalente poner model.nombreDestinatario-->
         <input asp-for="NombreDestinatario" class="form-control">
+        <span asp-validation-for="NombreDestinatario" class="text-danger"></span><!--Agrego-->
     </div>
     @for(int i = 0; i < Model.Detalle.Count; i++){<!--Aqui uso un for porque con foreach se pierde los indices para que se arme el objeto-->
         
         <div class="form-group">
-            <label asp-for="Detalle[@i].Producto.IdProducto"></label>
-            <input asp-for="Detalle[@i].Producto.IdProducto" class="form-control">
+            <label asp-for="Detalle[@i].IdProducto"></label>
+            <input asp-for="Detalle[@i].IdProducto" class="form-control">
+            <span asp-validation-for="Detalle[@i].IdProducto" class="text-danger"></span><!--Agrego-->
         </div>
         <div class="form-group">
             <label asp-for="Detalle[@i].Cantidad"></label>
             <input asp-for="Detalle[@i].Cantidad" class="form-control">
+            <span asp-validation-for="Detalle[@i].Cantidad" class="text-danger"></span><!--Agrego-->
         </div>
     }
     <button type="submit" class="btn btn-primary">Enviar</button>
 </form>
+<!--Agrego-->
+@section Scripts {
+ <partial name="_ValidationScriptsPartial" />
+}

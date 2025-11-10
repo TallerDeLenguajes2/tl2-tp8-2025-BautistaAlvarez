@@ -1,16 +1,25 @@
+@model tl2_tp8_2025_BautistaAlvarez.ViewModels.ProductoViewModel
 
-@model Productos
+@{
+ ViewData["Title"] = "Crear Producto";
+}
 
 <form asp-controller="Productos" asp-action="Edit" method="post">
-    <input hidden asp-for="@Model.IdProducto//aqui va porque uso la clase completa con su id">
+    <input hidden asp-for="@Model.IdProducto"><!--aqui va porque uso la clase completa con su id-->
     <div class="form-group">
         <label asp-for="@Model.Descripcion"></label>
         <input asp-for="@Model.Descripcion" class="form-control" />
+        <span asp-validation-for="Descripcion" class="text-danger"></span><!--Agrego-->
     </div><!--Se puede observar que aqui mando los 3 datos que usa mi repositorio para hacer el cambio-->
 
     <div class="form-group">
         <label asp-for="@Model.Precio"></label>
         <input asp-for="@Model.Precio" class="form-control" />
+        <span asp-validation-for="Precio" class="text-danger"></span><!--Agrego-->
     </div>
     <button type="submit">Enviar</button>
 </form>
+<!--Agrego-->
+@section Scripts {
+ <partial name="_ValidationScriptsPartial" />
+}

@@ -1,15 +1,25 @@
-@model Productos
+@model tl2_tp8_2025_BautistaAlvarez.ViewModels.ProductoViewModel
+@{
+ ViewData["Title"] = "Crear Producto";
+}
+
 
 
 <form asp-controller="Productos" asp-action="Create" method="post">
     <div class="form-group">
         <label asp-for="@Model.Descripcion"></label>
         <input asp-for="@Model.Descripcion" class="form-control" />
+        <span asp-validation-for="Descripcion" class="text-danger"></span><!--Agrego-->
     </div>
 
     <div class="form-group">
         <label asp-for="@Model.Precio"></label>
         <input asp-for="@Model.Precio" class="form-control" />
+        <span asp-validation-for="Precio" class="text-danger"></span><!--Agrego-->
     </div>
     <button type="submit" class="btn btn-primary">Enviar</button>
 </form>
+<!--Agrego-->
+@section Scripts {
+ <partial name="_ValidationScriptsPartial" />
+}

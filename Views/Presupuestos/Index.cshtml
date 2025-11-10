@@ -1,4 +1,5 @@
-@model List<Presupuestos>
+@using tl2_tp8_2025_BautistaAlvarez.ViewModels
+@model List<PresupuestoViewModel>
 @{
     ViewData["Title"] = "Home Page";
 }
@@ -25,7 +26,8 @@
                     <a asp-controller="Presupuestos" asp-action="Details" asp-route-idPresupuesto="@presupuesto.IdPresupuesto">Detalle</a><!--Ojo con el asp-route-"xxx",ahi lo que hace es mandar el dato idpresupuesto al detail, deben coincidir los parametros -->
                     <a asp-controller="Presupuestos" asp-action="Edit" asp-route-idPresupuesto="@presupuesto.IdPresupuesto">Editar</a>
                     <a asp-controller="Presupuestos" asp-action="Delete" asp-route-idPresupuesto="@presupuesto.IdPresupuesto" onclick="return confirm('¿Estas seguro que quieres eliminar el elemento?')">Eliminar</a>                      
-                </td>
+                    <a asp-controller="Presupuestos" asp-action="AgregarProducto" asp-route-idPresupuesto="@presupuesto.IdPresupuesto">Agregar Producto</a>
+                </td><!--Ojo con el asp-route-"xxx",ahi lo que hace es mandar el dato idpresupuesto al detail o metodo que sea, deben coincidir el nombre de los parametros -->
             </tr>
         }
     </tbody>

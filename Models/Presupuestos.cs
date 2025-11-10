@@ -28,7 +28,7 @@ namespace tl2_tp8_2025_BautistaAlvarez.Models
             float monto = 0;
             foreach (var presupuestoDetalle in detalle)
             {
-                monto += presupuestoDetalle.Cantidad * presupuestoDetalle.Producto.Precio;
+                monto += presupuestoDetalle.Cantidad * (float)presupuestoDetalle.Producto.Precio;
             }
 
             return monto;
