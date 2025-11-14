@@ -1,7 +1,8 @@
 using Microsoft.Data.Sqlite;
+using tl2_tp8_2025_BautistaAlvarez.Interfaces;
 using tl2_tp8_2025_BautistaAlvarez.Models;
 
-public class ProductoRepository
+public class ProductoRepository : IProductoRepository
 {
     string cadenaConexion = "Data Source=DB/Tienda.db";//conexion para todo el repositorio
 

@@ -2,10 +2,12 @@ using tl2_tp8_2025_BautistaAlvarez.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics.Contracts;//agregar si o si para controller (a veces se agrega solo)
 using tl2_tp8_2025_BautistaAlvarez.ViewModels;//nuevo using
+using tl2_tp8_2025_BautistaAlvarez.Interfaces;
 namespace tl2_tp8_2025_BautistaAlvarez.Controllers;
 
 public class ProductosController : Controller
 {
+    private readonly IAuthenticationService _authenticationService;
     private ProductoRepository productoRepository;
     public ProductosController(){//constructor
         productoRepository = new ProductoRepository();

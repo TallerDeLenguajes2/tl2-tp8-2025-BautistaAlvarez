@@ -2,8 +2,8 @@
 using Microsoft.Data.Sqlite;
 using SQLitePCL;
 using tl2_tp8_2025_BautistaAlvarez.Models;
-
-public class PresupuestosRepository
+using tl2_tp8_2025_BautistaAlvarez.Interfaces;
+public class PresupuestosRepository : IPresupuestosRepository
 {
     string cadenaConexion = "Data Source=DB/Tienda.db"; //conexion para todo el repositorio
 
@@ -201,7 +201,7 @@ public class PresupuestosRepository
         //Insertar nuevo detalle
         string sqlDetalle = "INSERT INTO PresupuestosDetalle (idPresupuesto, idProducto, Cantidad) VALUES (@idPresupuesto, @idProducto, @Cantidad)";
 
- 
+
         foreach (var detalle in presupuesto.Detalle)
         {
             using var comandoDetalle = new SqliteCommand(sqlDetalle, conexion);
@@ -210,7 +210,7 @@ public class PresupuestosRepository
             comandoDetalle.Parameters.Add(new SqliteParameter("@Cantidad", detalle.Cantidad));
             comandoDetalle.ExecuteNonQuery();
         }
-        
+
 
     }
 
@@ -218,7 +218,7 @@ public class PresupuestosRepository
     {
         using var conexion = new SqliteConnection(cadenaConexion);
         conexion.Open();
-//select COUNT(*) sirve para contar todas las filas de la talba presupuesto, y el WHERE lo uso para que solo cuente cuando haya coincidencia de ID. Lo cual siempre me devolvera 1 o 0
+        //select COUNT(*) sirve para contar todas las filas de la talba presupuesto, y el WHERE lo uso para que solo cuente cuando haya coincidencia de ID. Lo cual siempre me devolvera 1 o 0
         string sql = "SELECT COUNT(*) FROM Presupuestos WHERE idPresupuesto = @idPresupuesto";
         using var comando = new SqliteCommand(sql, conexion);
         comando.Parameters.Add(new SqliteParameter("@idPresupuesto", idPresupuesto));
@@ -228,9 +228,9 @@ public class PresupuestosRepository
     }
     public bool ExisteProducto(int idProducto)
     {
-    using var conexion = new SqliteConnection(cadenaConexion);
-    conexion.Open();
-//select COUNT(*) sirve para contar todas las filas de la talba presupuesto, y el WHERE lo uso para que solo cuente cuando haya coincidencia de ID. Lo cual siempre me devolvera 1 o 0
+        using var conexion = new SqliteConnection(cadenaConexion);
+        conexion.Open();
+        //select COUNT(*) sirve para contar todas las filas de la talba presupuesto, y el WHERE lo uso para que solo cuente cuando haya coincidencia de ID. Lo cual siempre me devolvera 1 o 0
         string sql = "SELECT COUNT(*) FROM Productos WHERE idProducto = @idProducto";
         using var comando = new SqliteCommand(sql, conexion);
 
