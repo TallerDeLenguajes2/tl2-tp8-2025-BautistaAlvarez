@@ -5,7 +5,7 @@ using tl2_tp8_2025_BautistaAlvarez.Interfaces;
 
 public class LoginController : Controller
 {
-    private readonly IAuthenticationService _authenthicationService;
+    private readonly IAuthenticationService _authenthicationService;//lo uso para autentificar si la sesion es valida, ya que es una combinacion de http context y DB usuario
     //constructor
     public LoginController(IAuthenticationService authenticationService)
     {
@@ -13,7 +13,7 @@ public class LoginController : Controller
     }
 
     [HttpGet]//muestra la vista de login
-    public IActionResult Index()
+    public IActionResult Index()//debo crear index.cshtml solamente ya que las otras acciones solo vuelven al index
     {
         // ... (Crear LoginViewModel)
         return View(new LoginViewModel());
@@ -22,14 +22,15 @@ public class LoginController : Controller
     [HttpPost]//Procesa el login
     public IActionResult Login(LoginViewModel model)
     {
-        if (string.IsNullOrEmpty(model.UserName) || string.IsNullOrEmpty(model.Password))
+        if (string.IsNullOrEmpty(model.UserName) || string.IsNullOrEmpty(model.Password))//si mando vacio los datos
         {
             model.ErrorMessage = "Debe ingresar usuario y contraseña.";
+            return View("Index", model);
         }
 
-        if (_authenthicationService.Login(model.UserName, model.Password))
+        if (_authenthicationService.Login(model.UserName, model.Password))//si es true, se cargaran los datos al http context con los valores del usuario
         {
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Index", "Home");//redirijo al inicio
         }
 
         model.ErrorMessage = "Credenciales invalidas.";

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using tl2_tp8_2025_BautistaAlvarez.Interfaces;
 using tl2_tp8_2025_BautistaAlvarez.Models;
 using tl2_tp8_2025_BautistaAlvarez.ViewModels;//agrego nuevo using
 
@@ -7,37 +8,80 @@ namespace tl2_tp8_2025_BautistaAlvarez.Controllers;
 
 public class PresupuestosController : Controller
 {
-    private PresupuestosRepository presupuestosRepository;
-    public PresupuestosController()//constructor
-    {
-        presupuestosRepository = new PresupuestosRepository();
-    }
+    private IPresupuestosRepository _repo;//uso la interfaz en vez del repo directo
+    //private PresupuestosRepository presupuestosRepository;
+    private IAuthenticationService _authService;
     //necesitamos el repositorio del producto para el dropdown del agregar producto. <select> (dropdown list)
-    private ProductoRepository _productoRepository = new ProductoRepository();
+    private IProductoRepository _productoRepo;//cambio a interfaz
+    //private ProductoRepository _productoRepository = new ProductoRepository();
+    public PresupuestosController(IPresupuestosRepository repo, IProductoRepository prodRepo, IAuthenticationService authService)//constructor
+    {
+        //presupuestosRepository = new PresupuestosRepository();
+        _repo =repo;
+        _productoRepo=prodRepo;
+        _authService=authService;
+    }
     //Aqui van los Actions
     [HttpGet]
     public IActionResult Index()
     {//el nombre de los iactionresult seran el nombre de las paginas, en este caso pagina Index
-        List<Presupuestos> listaPresupuestos = presupuestosRepository.ListarPresupuesto();//recupero la lista de presupuesto
-        var listaPresupuestoVM = new List<PresupuestoViewModel>();//creo lista vacia del viewmodel
-        foreach (var presupuesto in listaPresupuestos)//paso de model a viewmodel
+
+        // Comprobación de si está logueado
+        if (!_authService.IsAuthenticated())
         {
-            var presupuestoVM = new PresupuestoViewModel(presupuesto);//creo viewmodel a partir del model
-            listaPresupuestoVM.Add(presupuestoVM);//agrego a la lista
+            return RedirectToAction("Index", "Login");
         }
-        return View(listaPresupuestoVM);//retorno la lista viewmodel
+        if (_authService.HasAccessLevel("Administrador") || _authService.HasAccessLevel("Cliente"))//verifico que sea admin o cliente
+        {
+            List<Presupuestos> listaPresupuestos = _repo.ListarPresupuesto();//recupero la lista de presupuesto
+            var listaPresupuestoVM = new List<PresupuestoViewModel>();//creo lista vacia del viewmodel
+            foreach (var presupuesto in listaPresupuestos)//paso de model a viewmodel
+            {
+                var presupuestoVM = new PresupuestoViewModel(presupuesto);//creo viewmodel a partir del model
+                listaPresupuestoVM.Add(presupuestoVM);//agrego a la lista
+            }
+            return View(listaPresupuestoVM);//retorno la lista viewmodel
+        }
+        else
+        {
+            return RedirectToAction("Index", "Login");// y sino lo es vuelvo al login
+        }
+
     }
     [HttpGet]
     public IActionResult Details(int idPresupuesto)
     {
-        Presupuestos presupuesto = presupuestosRepository.PresupuestoPorId(idPresupuesto);
-        return View(presupuesto);
+        // Comprobación de si está logueado
+        if (!_authService.IsAuthenticated())
+        {
+            return RedirectToAction("Index", "Login");
+        }
+        if (_authService.HasAccessLevel("Administrador") || _authService.HasAccessLevel("Cliente"))//verifico que sea admin o cliente
+        {
+            Presupuestos presupuesto = _repo.PresupuestoPorId(idPresupuesto);
+            return View(presupuesto);
+        }
+        else
+        {
+            return RedirectToAction("Index", "Login");// y sino lo es vuelvo al login
+        }
     }
 
     //CRUD
     [HttpGet]
     public IActionResult Create()
-    {
+    {//puedo hacer asi o puedo usar el metodo privado CheckAdminPermissions() que cree para checkear la seguridad es lo mismo------------------------------------------
+        // Comprobación de si está logueado
+        if (!_authService.IsAuthenticated())
+        {
+            return RedirectToAction("Index", "Login");
+        }
+        // Verifica Nivel de acceso
+        if (!_authService.HasAccessLevel("Administrador"))
+        {
+            return RedirectToAction(nameof(AccesoDenegado));
+        }
+
         var presupuestoVM = new PresupuestoViewModel();//creo un viewmodel vacio
         return View(presupuestoVM);//creo un presupuesto vacio y lo mando a la pagina para que este en blanco y se le de info
     }
@@ -49,6 +93,11 @@ public class PresupuestosController : Controller
         key → es el nombre de la propiedad del modelo donde querés asociar el error.
         Ejemplo: "FechaCreacion", "NombreDestinatario", "Cantidad", etc.
         errorMessage → es el texto que va a aparecer en la vista, junto al campo correspondiente.*/
+
+        // Aplicamos el chequeo de seguridad, agregar en los get y post de las acciones------------------------------------------
+        var securityCheck = CheckAdminPermissions();//si algo anda mal devuelvo un valor, sino devuelve null
+        if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion
+
         if (presupuestoVM.FechaCreacion > DateOnly.FromDateTime(DateTime.Now))//aqui paso de datetime a dateonly
         {
             ModelState.AddModelError("FechaCreacion", "La fecha de creación no puede ser futura.");//seria la propiedad y el mensaje que quiera dar
@@ -66,19 +115,27 @@ public class PresupuestosController : Controller
             FechaCreacion = presupuestoVM.FechaCreacion
         };
         // 3. Llamada al Repositorio
-        presupuestosRepository.CrearPresupuesto(nuevoPresupuesto);
+        _repo.CrearPresupuesto(nuevoPresupuesto);
         return RedirectToAction("Index");
     }
     [HttpGet]
     public IActionResult Edit(int idPresupuesto)//le ingreso un id de la tabla index para buscar el presupuesto
     {
-        var presupuesto = presupuestosRepository.PresupuestoPorId(idPresupuesto);
+        // Aplicamos el chequeo de seguridad, agregar en los get y post de las acciones------------------------------------------
+        var securityCheck = CheckAdminPermissions();//si algo anda mal devuelvo un valor, sino devuelve null
+        if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion
+
+        var presupuesto = _repo.PresupuestoPorId(idPresupuesto);
         var presupuestoVM = new EditarPresupuestoViewModel(presupuesto);//paso de model a viewmodel
         return View(presupuestoVM);
     }
     [HttpPost]//cuidado que int idPresupuesto debe coincidir en ambos metodos sino hay error si tienen nombres diferentes
     public IActionResult Edit(int idPresupuesto, EditarPresupuestoViewModel presupuestoVM)//del formulario mando un objeto presupuesto
     {
+        // Aplicamos el chequeo de seguridad, agregar en los get y post de las acciones------------------------------------------
+        var securityCheck = CheckAdminPermissions();//si algo anda mal devuelvo un valor, sino devuelve null
+        if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion
+
         if (idPresupuesto != presupuestoVM.IdPresupuesto) return NotFound();
         // 1. CHEQUEO DE SEGURIDAD DEL SERVIDOR
         if (!ModelState.IsValid)
@@ -98,19 +155,27 @@ public class PresupuestosController : Controller
         var presupuestoAEditar = presupuestoVM.ToModel();
 
         // 3. Llamada al Repositorio
-        presupuestosRepository.ModificarPresupuesto(presupuestoAEditar.IdPresupuesto, presupuestoAEditar);
+        _repo.ModificarPresupuesto(presupuestoAEditar.IdPresupuesto, presupuestoAEditar);
         return RedirectToAction("Index");
     }
     [HttpGet]
     public IActionResult Delete(int idPresupuesto)
     {
-        var presupuesto = presupuestosRepository.PresupuestoPorId(idPresupuesto);
+        // Aplicamos el chequeo de seguridad, agregar en los get y post de las acciones------------------------------------------
+        var securityCheck = CheckAdminPermissions();//si algo anda mal devuelvo un valor, sino devuelve null
+        if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion
+        
+        var presupuesto = _repo.PresupuestoPorId(idPresupuesto);
         return View(presupuesto);
     }
     [HttpPost]
     public IActionResult Delete(Presupuestos presupuesto)
     {
-        presupuestosRepository.EliminarPresupuestoPorId(presupuesto.IdPresupuesto);
+        // Aplicamos el chequeo de seguridad, agregar en los get y post de las acciones------------------------------------------
+        var securityCheck = CheckAdminPermissions();//si algo anda mal devuelvo un valor, sino devuelve null
+        if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion
+
+        _repo.EliminarPresupuestoPorId(presupuesto.IdPresupuesto);
         return RedirectToAction("Index");
     }
     //GET: Presupuesto/AgregarProducto
@@ -118,8 +183,12 @@ public class PresupuestosController : Controller
     //cuidado con el nombre del parametro, debe coincidir con el formulario en asp-route-idPresupuesto="@presupuesto.IdPresupuesto"
     public IActionResult AgregarProducto(int idPresupuesto)//por eso tiene de nombre idPresupuesto y no simplemente id
     {
+        // Aplicamos el chequeo de seguridad, agregar en los get y post de las acciones--------------------------------------------
+        var securityCheck = CheckAdminPermissions();//si algo anda mal devuelvo un valor, sino devuelve null
+        if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion
+
         // 1. Obtener los productos para el SelectList
-        List<Productos> listaProductos = _productoRepository.ListarTodosLosProductos();//lista Productos
+        List<Productos> listaProductos = _productoRepo.ListarTodosLosProductos();//lista Productos
         // 2. Crear el ViewModel
         AgregarProductoViewModel model = new AgregarProductoViewModel
         {
@@ -150,6 +219,10 @@ public class PresupuestosController : Controller
     [HttpPost]
     public IActionResult AgregarProducto(AgregarProductoViewModel model)
     {
+        // Aplicamos el chequeo de seguridad, agregar en los get y post de las acciones------------------------------------------
+        var securityCheck = CheckAdminPermissions();//si algo anda mal devuelvo un valor, sino devuelve null
+        if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion
+
         // 1. Chequeo de Seguridad para la Cantidad
         if (!ModelState.IsValid)
         {
@@ -159,18 +232,37 @@ public class PresupuestosController : Controller
             }*/
             // LÓGICA CRÍTICA DE RECARGA: Si falla la validación,
             // debemos recargar el SelectList porque se pierde en el POST.
-            var ListaProductos = _productoRepository.ListarTodosLosProductos();
+            var ListaProductos = _productoRepo.ListarTodosLosProductos();
             model.ListaProductos = new SelectList(ListaProductos, "IdProducto", "Descripcion");
             // Devolvemos el modelo con los errores y el dropdown recargado
             return View(model);
         }
         // 2. Si es VÁLIDO: Llamamos al repositorio para guardar la relación
-        presupuestosRepository.AgregarProducto(model.IdPresupuesto, model.IdProducto, model.Cantidad);//no es necesario pasar de viewmodel a modelo ya que la funcion ocupa valores primarios
+        _repo.AgregarProducto(model.IdPresupuesto, model.IdProducto, model.Cantidad);//no es necesario pasar de viewmodel a modelo ya que la funcion ocupa valores primarios
         // 3. Redirigimos al detalle del presupuesto
         return RedirectToAction(nameof(Details), new { idPresupuesto = model.IdPresupuesto });//el nombre del parametro debe coincidir con el parametro de la accion detail, en este caso idPresupuesto
         //RedirectToAction("NombreDeAccion", "NombreDeControlador(Opcional)", new { nombreParametro = valor });
 
     }
+    [HttpGet]
+    public IActionResult AccesoDenegado(){//agrego, tp10
+        return View();//solo pongo return view para mostrar la pagina AccesoDenegado.cshtml, al poner solamente view() el programa usa una pagina con el nombre de la accion
+    }//el programa busca Views/<NombreDelControllerSinController>/<NombreDeLaAcción>.cshtml o sino en Views/Shared/<NombreDeLaAcción>.cshtml
+    private IActionResult CheckAdminPermissions()//al ser private no lleva etiqueta [http], ya que solo es una funcion interna, esta funcion sirve para resumir el checkeo pero podria ponerlo directo en las acciones
+    {
+        // 1. No logueado? -> vuelve al login
+        if (!_authService.IsAuthenticated())
+        {
+            return RedirectToAction("Index", "Login");
+        }
+        // 2. No es Administrador? -> Da Error
+        if (!_authService.HasAccessLevel("Administrador"))
+        {
+            // Llamamos a AccesoDenegado (llama a la vista correspondiente de Productos)
+            return RedirectToAction(nameof(AccesoDenegado));
+        }
+        return null; // Permiso concedido, devuelvo null
+        }
 }
 
 /*

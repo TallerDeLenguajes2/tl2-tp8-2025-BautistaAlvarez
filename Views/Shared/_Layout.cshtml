@@ -1,4 +1,10 @@
-﻿<!DOCTYPE html>
+﻿@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@{
+    var isAuthenticated = HttpContextAccessor.HttpContext.Session.GetString("IsAuthenticated") == "true";
+    var username = HttpContextAccessor.HttpContext.Session.GetString("User");
+}
+<!--esto es para saber si el usuario esta logueado o no y mostrar opciones.-->
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -31,6 +37,22 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Presupuestos" asp-action="Index">Presupuestos</a>
                         </li>
+                        @if (isAuthenticated)
+                            {
+                                <li class="nav-item">
+                                    <span class="nav-link text-dark me-3">Bienvenido, @username</span>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Login" asp-action="Logout">Cerrar sesión</a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Login" asp-action="Index">Iniciar sesión</a>
+                                </li>
+                            }
                     </ul>
                 </div>
             </div>

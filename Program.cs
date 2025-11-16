@@ -16,7 +16,7 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     });
-// Registro de la Inyección de Dependencia (TODOS AddScoped)
+// Registro de la Inyección de Dependencia (TODOS AddScoped), esto sirve para cuando usemos las interfaces elija la que usa el repositorio que es un Db en este caso
 builder.Services.AddScoped<IProductoRepository, ProductoRepository>();
 builder.Services.AddScoped<IPresupuestosRepository, PresupuestosRepository>();
 builder.Services.AddScoped<IUserRepository, UsuarioRepository>();
