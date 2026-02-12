@@ -14,12 +14,16 @@ public class PresupuestosController : Controller
     //necesitamos el repositorio del producto para el dropdown del agregar producto. <select> (dropdown list)
     private IProductoRepository _productoRepo;//cambio a interfaz
     //private ProductoRepository _productoRepository = new ProductoRepository();
-    public PresupuestosController(IPresupuestosRepository repo, IProductoRepository prodRepo, IAuthenticationService authService)//constructor
+
+    //tp11
+    private readonly ILogger<PresupuestosController> _logger;//inyeccion de dependencia del logger
+    public PresupuestosController(IPresupuestosRepository repo, IProductoRepository prodRepo, IAuthenticationService authService, ILogger<PresupuestosController> logger)//constructor
     {
         //presupuestosRepository = new PresupuestosRepository();
         _repo =repo;
         _productoRepo=prodRepo;
         _authService=authService;
+        _logger = logger;
     }
     //Aqui van los Actions
     [HttpGet]
@@ -33,14 +37,23 @@ public class PresupuestosController : Controller
         }
         if (_authService.HasAccessLevel("Administrador") || _authService.HasAccessLevel("Cliente"))//verifico que sea admin o cliente
         {
-            List<Presupuestos> listaPresupuestos = _repo.ListarPresupuesto();//recupero la lista de presupuesto
-            var listaPresupuestoVM = new List<PresupuestoViewModel>();//creo lista vacia del viewmodel
-            foreach (var presupuesto in listaPresupuestos)//paso de model a viewmodel
+            try//tp11
             {
-                var presupuestoVM = new PresupuestoViewModel(presupuesto);//creo viewmodel a partir del model
-                listaPresupuestoVM.Add(presupuestoVM);//agrego a la lista
+                List<Presupuestos> listaPresupuestos = _repo.ListarPresupuesto();//recupero la lista de presupuesto
+                var listaPresupuestoVM = new List<PresupuestoViewModel>();//creo lista vacia del viewmodel
+                foreach (var presupuesto in listaPresupuestos)//paso de model a viewmodel
+                {
+                    var presupuestoVM = new PresupuestoViewModel(presupuesto);//creo viewmodel a partir del model
+                    listaPresupuestoVM.Add(presupuestoVM);//agrego a la lista
+                }
+                return View(listaPresupuestoVM);//retorno la lista viewmodel
             }
-            return View(listaPresupuestoVM);//retorno la lista viewmodel
+            catch(Exception ex)
+            {
+                ErrorViewModel errorVM = new ErrorViewModel{RequestId = HttpContext.TraceIdentifier};//creo un VM del error para mandar id a la pagina
+                _logger.LogError(ex.ToString());//cargo el error completo al logger para la consola
+                return View("Error",errorVM);//cargo la pagina para que el usuario vea
+            }
         }
         else
         {
@@ -58,8 +71,17 @@ public class PresupuestosController : Controller
         }
         if (_authService.HasAccessLevel("Administrador") || _authService.HasAccessLevel("Cliente"))//verifico que sea admin o cliente
         {
-            Presupuestos presupuesto = _repo.PresupuestoPorId(idPresupuesto);
-            return View(presupuesto);
+            try
+            {
+                Presupuestos presupuesto = _repo.PresupuestoPorId(idPresupuesto);
+                return View(presupuesto);
+            }
+            catch (Exception ex)
+            {
+                ErrorViewModel errorVM = new ErrorViewModel{RequestId = HttpContext.TraceIdentifier};//creo un VM del error para mandar id a la pagina
+                _logger.LogError(ex.ToString());//cargo el error completo al logger para la consola
+                return View("Error",errorVM);//cargo la pagina para que el usuario vea
+            }
         }
         else
         {
@@ -109,14 +131,24 @@ public class PresupuestosController : Controller
             return View(presupuestoVM);
         }
         // 2. SI ES VÁLIDO: Mapeo Manual de VM a Modelo de Dominio
-        var nuevoPresupuesto = new Presupuestos
+        //tp11
+        try
         {
-            NombreDestinatario = presupuestoVM.NombreDestinatario,//no se agrega el id ya que solo se necesita estos 2 parametros y ademas el id lo coloca el db
-            FechaCreacion = presupuestoVM.FechaCreacion
-        };
-        // 3. Llamada al Repositorio
-        _repo.CrearPresupuesto(nuevoPresupuesto);
-        return RedirectToAction("Index");
+            var nuevoPresupuesto = new Presupuestos
+            {
+                NombreDestinatario = presupuestoVM.NombreDestinatario,//no se agrega el id ya que solo se necesita estos 2 parametros y ademas el id lo coloca el db
+                FechaCreacion = presupuestoVM.FechaCreacion
+            };
+            // 3. Llamada al Repositorio
+            _repo.CrearPresupuesto(nuevoPresupuesto);
+            return RedirectToAction("Index");
+        }
+        catch(Exception ex)
+        {
+            ErrorViewModel errorVM = new ErrorViewModel{RequestId = HttpContext.TraceIdentifier};//creo un VM del error para mandar id a la pagina
+            _logger.LogError(ex.ToString());//cargo el error completo al logger para la consola
+            return View("Error",errorVM);//cargo la pagina para que el usuario vea
+        }
     }
     [HttpGet]
     public IActionResult Edit(int idPresupuesto)//le ingreso un id de la tabla index para buscar el presupuesto
@@ -125,9 +157,19 @@ public class PresupuestosController : Controller
         var securityCheck = CheckAdminPermissions();//si algo anda mal devuelvo un valor, sino devuelve null
         if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion
 
-        var presupuesto = _repo.PresupuestoPorId(idPresupuesto);
-        var presupuestoVM = new EditarPresupuestoViewModel(presupuesto);//paso de model a viewmodel
-        return View(presupuestoVM);
+        //tp11
+        try
+        {    
+            var presupuesto = _repo.PresupuestoPorId(idPresupuesto);
+            var presupuestoVM = new EditarPresupuestoViewModel(presupuesto);//paso de model a viewmodel
+            return View(presupuestoVM);
+        }
+        catch(Exception ex)
+        {
+            ErrorViewModel errorVM = new ErrorViewModel{RequestId = HttpContext.TraceIdentifier};//creo un VM del error para mandar id a la pagina
+            _logger.LogError(ex.ToString());//cargo el error completo al logger para la consola
+            return View("Error",errorVM);//cargo la pagina para que el usuario vea
+        }
     }
     [HttpPost]//cuidado que int idPresupuesto debe coincidir en ambos metodos sino hay error si tienen nombres diferentes
     public IActionResult Edit(int idPresupuesto, EditarPresupuestoViewModel presupuestoVM)//del formulario mando un objeto presupuesto
@@ -140,14 +182,14 @@ public class PresupuestosController : Controller
         // 1. CHEQUEO DE SEGURIDAD DEL SERVIDOR
         if (!ModelState.IsValid)
         {
-            foreach (var kvp in ModelState)
+            foreach (var kvp in ModelState)//esto agrego para ver un error
             {
                 var key = kvp.Key;
                 foreach (var error in kvp.Value.Errors)
                 {
                     Console.WriteLine($"{key}: {error.ErrorMessage}");
                 }
-            }
+            }//esto agrego para ver un error
             return View(presupuestoVM);
             //return View(presupuestoVM);
         }
@@ -155,8 +197,18 @@ public class PresupuestosController : Controller
         var presupuestoAEditar = presupuestoVM.ToModel();
 
         // 3. Llamada al Repositorio
-        _repo.ModificarPresupuesto(presupuestoAEditar.IdPresupuesto, presupuestoAEditar);
-        return RedirectToAction("Index");
+        //tp11
+        try
+        {    
+            _repo.ModificarPresupuesto(presupuestoAEditar.IdPresupuesto, presupuestoAEditar);
+            return RedirectToAction("Index");
+        }
+        catch(Exception ex)
+        {
+            ErrorViewModel errorVM = new ErrorViewModel{RequestId = HttpContext.TraceIdentifier};//creo un VM del error para mandar id a la pagina
+            _logger.LogError(ex.ToString());//cargo el error completo al logger para la consola
+            return View("Error",errorVM);//cargo la pagina para que el usuario vea
+        }
     }
     [HttpGet]
     public IActionResult Delete(int idPresupuesto)
@@ -164,19 +216,38 @@ public class PresupuestosController : Controller
         // Aplicamos el chequeo de seguridad, agregar en los get y post de las acciones------------------------------------------
         var securityCheck = CheckAdminPermissions();//si algo anda mal devuelvo un valor, sino devuelve null
         if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion
-        
-        var presupuesto = _repo.PresupuestoPorId(idPresupuesto);
-        return View(presupuesto);
+        //tp11
+        try
+        {
+            var presupuesto = _repo.PresupuestoPorId(idPresupuesto);
+            return View(presupuesto);
+        }
+        catch(Exception ex)
+        {
+            ErrorViewModel errorVM = new ErrorViewModel{RequestId = HttpContext.TraceIdentifier};//le cargo al vm el id para la pagina
+            _logger.LogError(ex.ToString());//cargo el error completo para la consola
+            return View("Error",errorVM);//cargo pagina e id del error
+        }
     }
-    [HttpPost]
+    [HttpPost]//[HttpPost, ActionName("Delete")] a veces necesitarias cambiar el nombre de la funcion y poneler un nombre a action
     public IActionResult Delete(Presupuestos presupuesto)
     {
         // Aplicamos el chequeo de seguridad, agregar en los get y post de las acciones------------------------------------------
         var securityCheck = CheckAdminPermissions();//si algo anda mal devuelvo un valor, sino devuelve null
-        if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion
+        if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion en la que quedo la funcion
 
-        _repo.EliminarPresupuestoPorId(presupuesto.IdPresupuesto);
-        return RedirectToAction("Index");
+        //tp11
+        try
+        {    
+            _repo.EliminarPresupuestoPorId(presupuesto.IdPresupuesto);
+            return RedirectToAction("Index");
+        }
+        catch(Exception ex)
+        {
+            ErrorViewModel errorVM = new ErrorViewModel{RequestId = HttpContext.TraceIdentifier};//le cargo al vm el id para la pagina
+            _logger.LogError(ex.ToString());//cargo el error completo para la consola
+            return View("Error",errorVM);//cargo pagina e id del error
+        }
     }
     //GET: Presupuesto/AgregarProducto
     [HttpGet]
@@ -187,32 +258,42 @@ public class PresupuestosController : Controller
         var securityCheck = CheckAdminPermissions();//si algo anda mal devuelvo un valor, sino devuelve null
         if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion
 
-        // 1. Obtener los productos para el SelectList
-        List<Productos> listaProductos = _productoRepo.ListarTodosLosProductos();//lista Productos
-        // 2. Crear el ViewModel
-        AgregarProductoViewModel model = new AgregarProductoViewModel
+        //tp11
+        try
         {
-            IdPresupuesto = idPresupuesto,// Pasamos el ID del presupuesto actual
-            // 3. Crear el SelectList, sirve para mandarselo al formulario y nos muestre los productos para elegir
-            ListaProductos = new SelectList(listaProductos, "IdProducto", "Descripcion")//new SelectList(lista, "Valor", "Texto")
-        };
-        //Explicacion de selectList, es para hacer un select en el formulario
-        /*
-        lista → es una lista de objetos (por ejemplo, List<Productos>).
+            // 1. Obtener los productos para el SelectList
+            List<Productos> listaProductos = _productoRepo.ListarTodosLosProductos();//lista Productos
+            // 2. Crear el ViewModel
+            AgregarProductoViewModel model = new AgregarProductoViewModel
+            {
+                IdPresupuesto = idPresupuesto,// Pasamos el ID del presupuesto actual
+                // 3. Crear el SelectList, sirve para mandarselo al formulario y nos muestre los productos para elegir
+                ListaProductos = new SelectList(listaProductos, "IdProducto", "Descripcion")//new SelectList(lista, "Valor", "Texto")
+            };
+            //Explicacion de selectList, es para hacer un select en el formulario
+            /*
+            lista → es una lista de objetos (por ejemplo, List<Productos>).
 
-        "Valor" → es el nombre de la propiedad del objeto que se usará como el value del <option>.
+            "Valor" → es el nombre de la propiedad del objeto que se usará como el value del <option>.
 
-        "Texto" → es el nombre de la propiedad del objeto que se mostrará al usuario como el texto visible.
-------------------------------------------------------------------------------------------------------------------------
-        listaProductos → viene del repositorio (ListarTodosLosProductos()), o sea, una lista de objetos tipo Productos.
+            "Texto" → es el nombre de la propiedad del objeto que se mostrará al usuario como el texto visible.
+    ------------------------------------------------------------------------------------------------------------------------
+            listaProductos → viene del repositorio (ListarTodosLosProductos()), o sea, una lista de objetos tipo Productos.
 
-        "IdProducto" → será el valor del <option>, es decir, el número del producto.
+            "IdProducto" → será el valor del <option>, es decir, el número del producto.
 
-        "Descripcion" → será el texto visible en el dropdown, o sea, lo que el usuario ve.
-        //IdProducto y Descripcion pertenecen a la listaProductos o sea son campos de la lista que le mande
-        */
+            "Descripcion" → será el texto visible en el dropdown, o sea, lo que el usuario ve.
+            //IdProducto y Descripcion pertenecen a la listaProductos o sea son campos de la lista que le mande
+            */
 
-        return View(model);
+            return View(model);
+        }
+        catch(Exception ex)
+        {
+            ErrorViewModel errorVM = new ErrorViewModel{RequestId = HttpContext.TraceIdentifier};//le cargo al vm el id para la pagina
+            _logger.LogError(ex.ToString());//cargo el error completo para la consola
+            return View("Error",errorVM);//cargo pagina e id del error
+        }
     }
     // ❗ El Método CLAVE para la validación de la cantidad
     // POST: Presupuestos/AgregarProducto
@@ -223,26 +304,36 @@ public class PresupuestosController : Controller
         var securityCheck = CheckAdminPermissions();//si algo anda mal devuelvo un valor, sino devuelve null
         if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion
 
-        // 1. Chequeo de Seguridad para la Cantidad
-        if (!ModelState.IsValid)
-        {
-            /*foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+        //tp11
+        try //incluyo los llamado al repositorio
+        {    
+            // 1. Chequeo de Seguridad para la Cantidad
+            if (!ModelState.IsValid)
             {
-                Console.WriteLine(error.ErrorMessage);
-            }*/
-            // LÓGICA CRÍTICA DE RECARGA: Si falla la validación,
-            // debemos recargar el SelectList porque se pierde en el POST.
-            var ListaProductos = _productoRepo.ListarTodosLosProductos();
-            model.ListaProductos = new SelectList(ListaProductos, "IdProducto", "Descripcion");
-            // Devolvemos el modelo con los errores y el dropdown recargado
-            return View(model);
-        }
-        // 2. Si es VÁLIDO: Llamamos al repositorio para guardar la relación
-        _repo.AgregarProducto(model.IdPresupuesto, model.IdProducto, model.Cantidad);//no es necesario pasar de viewmodel a modelo ya que la funcion ocupa valores primarios
-        // 3. Redirigimos al detalle del presupuesto
-        return RedirectToAction(nameof(Details), new { idPresupuesto = model.IdPresupuesto });//el nombre del parametro debe coincidir con el parametro de la accion detail, en este caso idPresupuesto
-        //RedirectToAction("NombreDeAccion", "NombreDeControlador(Opcional)", new { nombreParametro = valor });
+                /*foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    Console.WriteLine(error.ErrorMessage);
+                }*/
 
+                // LÓGICA CRÍTICA DE RECARGA: Si falla la validación,
+                // debemos recargar el SelectList porque se pierde en el POST.
+                var ListaProductos = _productoRepo.ListarTodosLosProductos();
+                model.ListaProductos = new SelectList(ListaProductos, "IdProducto", "Descripcion");
+                // Devolvemos el modelo con los errores y el dropdown recargado
+                return View(model);
+            }
+            // 2. Si es VÁLIDO: Llamamos al repositorio para guardar la relación
+            _repo.AgregarProducto(model.IdPresupuesto, model.IdProducto, model.Cantidad);//no es necesario pasar de viewmodel a modelo ya que la funcion ocupa valores primarios
+            // 3. Redirigimos al detalle del presupuesto
+            return RedirectToAction(nameof(Details), new { idPresupuesto = model.IdPresupuesto });//el nombre del parametro debe coincidir con el parametro de la accion detail, en este caso idPresupuesto
+            //RedirectToAction("NombreDeAccion", "NombreDeControlador(Opcional)", new { nombreParametro = valor });
+        }
+        catch(Exception ex)
+        {
+            ErrorViewModel errorVM = new ErrorViewModel{RequestId = HttpContext.TraceIdentifier};//le cargo al vm el id para la pagina
+            _logger.LogError(ex.ToString());//cargo el error completo para la consola
+            return View("Error",errorVM);//cargo pagina e id del error
+        }
     }
     [HttpGet]
     public IActionResult AccesoDenegado(){//agrego, tp10
@@ -274,4 +365,16 @@ foreach (var kvp in ModelState)
         Console.WriteLine($"Error en '{campo}': {error.ErrorMessage}");
     }
 }
+
+// Muestra todos los errores en la Consola/Debug Output de Visual Studio
+            foreach (var modelStateKey in ModelState.Keys)
+            {
+                var modelStateVal = ModelState[modelStateKey];
+                foreach (var error in modelStateVal.Errors)
+                {
+                    // Imprime el nombre del campo y el error de validación exacto.
+                    Console.WriteLine($"Error en el campo '{modelStateKey}': {error.ErrorMessage}");
+                }
+            }
+    
 */

@@ -1,7 +1,7 @@
 using tl2_tp8_2025_BautistaAlvarez.Interfaces;
 namespace tl2_tp8_2025_BautistaAlvarez.Services;
 //Esta clase en resumen sirve para el logueo y deslogueo y asi se cargan o limpian los datos de session. Ademas tiene funciones para verificar si esta autentificado o su rol cliente o admin
-public class AuthenticationService : IAuthenticationService
+public class AuthenticationService : IAuthenticationService//este servicio se alimenta del repositorio usuario y http context
 {
     private readonly IUserRepository _userRepository;//para cargar los usuarios de la DB
     private readonly IHttpContextAccessor _httpContextAccessor;
@@ -17,6 +17,7 @@ public class AuthenticationService : IAuthenticationService
 
     public bool Login(string username, string password)//sirve para loguear, cargo los datos de la base de dato usuario a la sesion que esta en el conxteto del http si se cumplen condiciones
     {
+        
         var context = _httpContextAccessor.HttpContext;//obtengo el contexto
         var user = _userRepository.GetUser(username, password);//obtengo usuario mediante sql
         if (user != null)

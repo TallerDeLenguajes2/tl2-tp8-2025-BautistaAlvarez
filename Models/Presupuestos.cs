@@ -14,7 +14,7 @@ namespace tl2_tp8_2025_BautistaAlvarez.Models
         public int IdPresupuesto { get => idPresupuesto; set => idPresupuesto = value; }
         public string NombreDestinatario { get => nombreDestinatario; set => nombreDestinatario = value; }
         public DateOnly FechaCreacion { get => fechaCreacion; set => fechaCreacion = value; }
-        public List<PresupuestosDetalle> Detalle { get => detalle; set => detalle = value; }
+        public List<PresupuestosDetalle> Detalle { get => detalle; set => detalle = value; } //= new List<PresupuestoDetalle>(); tambien se puede hacer asi
 
         public Presupuestos()//constructor
         {

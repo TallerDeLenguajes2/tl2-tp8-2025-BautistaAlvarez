@@ -10,10 +10,14 @@ public class ProductosController : Controller
     private readonly IAuthenticationService _authService;//para autentificar que los valores sean correctos
     //private ProductoRepository productoRepository; cambio a interfaz
     private IProductoRepository _repo;
-    public ProductosController(IProductoRepository prodRepo, IAuthenticationService authService){//constructor
+
+    //tp11
+    private readonly ILogger<ProductosController> _logger;//inyeccion de dependencias del logger
+    public ProductosController(IProductoRepository prodRepo, IAuthenticationService authService, ILogger<ProductosController> logger){//constructor
         //productoRepository = new ProductoRepository(); cambio
         _repo = prodRepo;
         _authService = authService;
+        _logger = logger;//agrego logger
     }
     //A partir de aqui van los actions
 
@@ -21,29 +25,48 @@ public class ProductosController : Controller
     public IActionResult Index()
     {
         // Aplicamos el chequeo de seguridad, agregar en los get y post de las acciones
-        var securityCheck = CheckAdminPermissions();//si algo anda mal devuelvo un valor, sino devuelve null
-        if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion
+        var securityCheck = CheckAdminPermissions();//si algo anda mal devuelve una accion, sino devuelve null
+        if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion que se haya cargado
         // Aplicamos el chequeo de seguridad, el chequeo de seguridad podemos hacerlo mediante una accion como en este caso o directo en el codigo como en presupuesto
 
-        List<Productos> ListaProductos = _repo.ListarTodosLosProductos();
-        var listaProductoViewmodel = new List<ProductoViewModel>();//creo una lista de viewmodel
-        foreach (var producto in ListaProductos)//paso los productos a la liste de viewmodel (de model a viewmodel)
+        try//tp11 el security check podria ir dentro o fuera del try
         {
-            var productoVM = new ProductoViewModel(producto);
-            listaProductoViewmodel.Add(productoVM);
+            List<Productos> ListaProductos = _repo.ListarTodosLosProductos();
+            var listaProductoViewmodel = new List<ProductoViewModel>();//creo una lista de viewmodel
+            foreach (var producto in ListaProductos)//paso los productos a la liste de viewmodel (de model a viewmodel)
+            {
+                var productoVM = new ProductoViewModel(producto);
+                listaProductoViewmodel.Add(productoVM);
+            }
+            return View(listaProductoViewmodel);
         }
-        return View(listaProductoViewmodel);
+        catch (Exception ex)
+        {
+            ErrorViewModel errorVM = new ErrorViewModel{RequestId = HttpContext.TraceIdentifier};//creo un VM del error para mandar id a la pagina
+            _logger.LogError(ex.ToString());//cargo el error completo al logger para la consola
+            return View("Error",errorVM);//cargo la pagina para que el usuario vea
+        }
+
     }
     [HttpGet]
     public IActionResult Details(int idProducto)
     {
-        // Aplicamos el chequeo de seguridad
-        var securityCheck = CheckAdminPermissions();//si algo anda mal devuelvo un valor, sino devuelve null
-        if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion
-        // Aplicamos el chequeo de seguridad
+        try//tp11 podria poner el securitychekc fuera o dentro del try
+        {    
+            // Aplicamos el chequeo de seguridad
+            var securityCheck = CheckAdminPermissions();//si algo anda mal devuelvo un valor, sino devuelve null
+            if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion
+            // Aplicamos el chequeo de seguridad
 
-        Productos producto = _repo.ObtenerDetalleProductoPorId(idProducto);
-        return View(producto);
+            Productos producto = _repo.ObtenerDetalleProductoPorId(idProducto);
+            return View(producto);
+        }
+        catch(Exception ex)
+        {
+            ErrorViewModel errorVM = new ErrorViewModel{RequestId = HttpContext.TraceIdentifier};//creo un VM del error para mandar id a la pagina
+            _logger.LogError(ex.ToString());//cargo el error completo al logger para la consola
+            return View("Error",errorVM);//cargo la pagina para que el usuario vea
+        }
     }
     [HttpGet]//un get para mostrar una pagina en blanco de formulario para que el usuario llene con datos
     public IActionResult Create()
@@ -71,15 +94,24 @@ public class ProductosController : Controller
             return View(productoVM);
         }
         // 2. SI ES VÁLIDO: Mapeo Manual de VM a Modelo de Dominio
-        var nuevoProducto = new Productos
+        try//tp11
         {
-            //no coloco el id porque el repositorio no ocupa y se genera solo a la base de dato
-            Descripcion = productoVM.Descripcion,
-            Precio = productoVM.Precio//aqui cambie a tipo decimal el precio, originalmente estaba en int
-        };
-        // 3. Llamada al Repositorio
-        _repo.CrearNuevoProducto(nuevoProducto);//creo producto
-        return RedirectToAction("Index");//me devuelve a la pagina inicio de producto
+            var nuevoProducto = new Productos//creo que podria crear el producto fuera del try
+            {
+                //no coloco el id porque el repositorio no ocupa y se genera solo a la base de dato
+                Descripcion = productoVM.Descripcion,
+                Precio = productoVM.Precio//aqui cambie a tipo decimal el precio, originalmente estaba en int
+            };
+            // 3. Llamada al Repositorio
+            _repo.CrearNuevoProducto(nuevoProducto);//creo producto
+            return RedirectToAction("Index");//me devuelve a la pagina inicio de producto
+        }
+        catch(Exception ex)
+        {
+            ErrorViewModel errorVM = new ErrorViewModel{RequestId = HttpContext.TraceIdentifier};//creo un VM del error para mandar id a la pagina
+            _logger.LogError(ex.ToString());//cargo el error completo al logger para la consola
+            return View("Error",errorVM);//cargo la pagina para que el usuario vea
+        }
     }
     [HttpGet]
     public IActionResult Edit(int idProducto)//mando el id del producto a editar
@@ -87,11 +119,21 @@ public class ProductosController : Controller
         // Aplicamos el chequeo de seguridad
         var securityCheck = CheckAdminPermissions();//si algo anda mal devuelvo un valor, sino devuelve null
         if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion
-        // Aplicamos el chequeo de seguridad
+                                                        // Aplicamos el chequeo de seguridad
 
-        var producto = _repo.ObtenerDetalleProductoPorId(idProducto);//retorno el producto buscado
-        var productoVM = new ProductoViewModel(producto);//paso de model a viewmodel
-        return View(productoVM);
+        //tp11
+        try
+        {    
+            var producto = _repo.ObtenerDetalleProductoPorId(idProducto);//retorno el producto buscado
+            var productoVM = new ProductoViewModel(producto);//paso de model a viewmodel
+            return View(productoVM);
+        }
+        catch (Exception ex)
+        {
+            ErrorViewModel errorVM = new ErrorViewModel{RequestId = HttpContext.TraceIdentifier};//le cargo al vm el id para la pagina
+            _logger.LogError(ex.ToString());//cargo el error completo para la consola
+            return View("Error",errorVM);//cargo pagina e id del error
+        }
     }
     [HttpPost]//tener cuidado con el int idProducto, sus nombres deben coincidir y en el formulario de edit.cshtml
     public IActionResult Edit(int idProducto, ProductoViewModel productoVM)//ingreso un objeto del tipo producto
@@ -115,8 +157,18 @@ public class ProductosController : Controller
             Precio = productoVM.Precio
         };
         // 3. Llamada al Repositorio
-        _repo.ModificarProductoExistente(productoAEditar.IdProducto, productoAEditar);//pongo el mismo id ya que es el mismo producto
-        return RedirectToAction("Index");
+        
+        try//tp11
+        {    
+            _repo.ModificarProductoExistente(productoAEditar.IdProducto, productoAEditar);//pongo el mismo id ya que es el mismo producto
+            return RedirectToAction("Index");
+        }
+        catch (Exception ex)
+        {
+            ErrorViewModel errorVM = new ErrorViewModel{RequestId = HttpContext.TraceIdentifier};//le cargo al vm el id para la pagina
+            _logger.LogError(ex.ToString());//cargo el error completo para la consola
+            return View("Error",errorVM);//cargo pagina e id del error
+        }
     }
     [HttpGet]
     public IActionResult Delete(int idProducto)//introduzco el id del producto buscado
@@ -125,9 +177,18 @@ public class ProductosController : Controller
         var securityCheck = CheckAdminPermissions();//si algo anda mal devuelvo un valor, sino devuelve null
         if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion
         // Aplicamos el chequeo de seguridad
-
-        var producto = _repo.ObtenerDetalleProductoPorId(idProducto);
-        return View(producto);//muestro el producto a eliminar
+        
+        try//tp11
+        {    
+            var producto = _repo.ObtenerDetalleProductoPorId(idProducto);//obtengo el producto por eliminar
+            return View(producto);//muestro el producto a eliminar
+        }
+        catch(Exception ex)
+        {
+            ErrorViewModel errorVM = new ErrorViewModel{RequestId = HttpContext.TraceIdentifier};//le cargo al vm el id para la pagina
+            _logger.LogError(ex.ToString());//cargo el error completo para la consola
+            return View("Error",errorVM);//cargo pagina e id del error
+        }
     }
     [HttpPost]
     public IActionResult Delete(Productos producto)//pongo un objeto producto porque en el get retorne un objeto producto, podria mandar solo un int pero requiere hacer mas cosas
@@ -136,9 +197,19 @@ public class ProductosController : Controller
         var securityCheck = CheckAdminPermissions();//si algo anda mal devuelvo un valor, sino devuelve null
         if (securityCheck != null) return securityCheck;// si no esta vacio devuelvo la accion
         // Aplicamos el chequeo de seguridad
+        //tp11
+        try
+        {    
+            _repo.EliminarProductoPorId(producto.IdProducto);
+            return RedirectToAction("Index");
+        }
+        catch(Exception ex)
+        {
+            ErrorViewModel errorVM = new ErrorViewModel{RequestId = HttpContext.TraceIdentifier};//le cargo al vm el id para la pagina
+            _logger.LogError(ex.ToString());//cargo el error completo para la consola
+            return View("Error",errorVM);//cargo pagina e id del error
+        }
 
-        _repo.EliminarProductoPorId(producto.IdProducto);
-        return RedirectToAction("Index");
     }
     [HttpGet]
     public IActionResult AccesoDenegado(){//agrego, tp10

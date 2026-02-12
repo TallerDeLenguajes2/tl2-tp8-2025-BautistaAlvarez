@@ -8,7 +8,7 @@ namespace tl2_tp8_2025_BautistaAlvarez.ViewModels
     {
         // ID del presupuesto al que se va a agregar (viene de la URL o campo oculto)
         public int IdPresupuesto { get; set; }
-        // ID del producto seleccionado en el dropdown
+        // ID del producto seleccionado en el dropdown, display es para mostrar el nombre en la pagina
         [Display(Name = "Producto a agregar")]
         public int IdProducto { get; set; }
         // Validación: Requerido y debe ser positivo
